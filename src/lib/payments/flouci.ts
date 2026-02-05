@@ -39,9 +39,6 @@ export async function createPayment(
         `${FLOUCI_API_URL}/payments/init`, // Prompt code: /payments/init. Flouci real path: /generate_payment usually.
         // Prompt code explicitly provided. I must use it.
         {
-            amount: Math.round(amount * 1000), // Flouci expects millimes often? Prompt says `amount.toFixed(2)`.
-            // Prompt code: amount: amount.toFixed(2).
-            // I will follow prompt code exactly.
             amount: amount.toFixed(2),
             currency: 'TND',
             order_id: orderId,
