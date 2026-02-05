@@ -1,0 +1,258 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                String    @id @default(uuid())
+  email             String    @unique
+  passwordHash      String
+  role              Role      @default(STORE_OWNER) // STORE_OWNER | AFFILIATE | CUSTOMER | ADMIN
+  language          Language  @default(FR) // FR | AR
+  phone             String?
+  phoneVerified     Boolean   @default(false)
+  flouciWallet      String?
+  createdAt         DateTime  @default(now())
+  
+  // Relations
+  ownedStores       Store[]   @relation("StoreOwner")
+  affiliateProfile  Affiliate?
+  orders            Order[]   @relation("CustomerOrders")
+  referralOrders    Order[]   @relation("AffiliateOrders")
+  
+  @@index([email])
+  @@index([role])
+}
+
+model Store {
+  id                String    @id @default(uuid())
+  ownerId           String
+  owner             User      @relation("StoreOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  name              String
+  subdomain         String    @unique // e.g., "bijouterie-ali.storepulse.tn"
+  template          Template  @default(ARTISAN) // ARTISAN | MODETN | TECHDARI
+  commissionRate    Decimal   @default(0.15) // 15%
+  affiliateEnabled  Boolean   @default(true)
+  governorate       Governorate @default(TUNIS)
+  currency          String    @default("TND")
+  status            StoreStatus @default(ACTIVE) // ACTIVE | SUSPENDED | DELETED
+  createdAt         DateTime  @default(now())
+  
+  // Relations
+  products          Product[]
+  orders            Order[]
+  affiliates        Affiliate[]
+  payoutRequests    PayoutRequest[]
+  
+  @@index([ownerId])
+  @@index([subdomain])
+  @@index([status])
+}
+
+model Product {
+  id                String    @id @default(uuid())
+  storeId           String
+  store             Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  name              String
+  price             Decimal   @db.Decimal(10, 2)
+  description       String?
+  images            String[]  // S3 URLs
+  stock             Int       @default(0)
+  createdAt         DateTime  @default(now())
+  
+  @@index([storeId])
+  @@index([createdAt])
+}
+
+model Order {
+  id                        String    @id @default(uuid())
+  storeId                   String
+  store                     Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  customerId                String?
+  customer                  User?     @relation("CustomerOrders", fields: [customerId], references: [id], onDelete: SetNull)
+  customerEmail             String
+  customerPhone             String?
+  total                     Decimal   @db.Decimal(10, 2)
+  status                    OrderStatus @default(PENDING) // PENDING | PAID | PROCESSING | SHIPPED | DELIVERED | CANCELLED
+  paymentMethod             PaymentMethod // FLOUCI | COD | PAYPAL
+  codConfirmedByOwnerAt     DateTime?
+  affiliateId               String?
+  affiliate                 User?     @relation("AffiliateOrders", fields: [affiliateId], references: [id], onDelete: SetNull)
+  
+  flouciTransactionId       String?
+  createdAt                 DateTime  @default(now())
+  
+  commission                Commission?
+  clicks                    Click[]
+  
+  @@index([storeId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([affiliateId])
+}
+
+model Affiliate {
+  id                String    @id @default(uuid())
+  userId            String    @unique
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  storeId           String
+  store             Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  referralCode      String    @unique // e.g., "marwa_123"
+  cookieDays        Int       @default(30)
+  status            AffiliateStatus @default(ACTIVE) // ACTIVE | BLOCKED
+  createdAt         DateTime  @default(now())
+  
+  clicks            Click[]
+  commissions       Commission[]
+  payoutRequests    PayoutRequest[]
+  
+  @@index([userId])
+  @@index([storeId])
+  @@index([referralCode])
+  @@unique([userId, storeId])
+}
+
+model Commission {
+  id                String    @id @default(uuid())
+  affiliateId       String
+  affiliate         Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  orderId           String    @unique
+  order             Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  amount            Decimal   @db.Decimal(10, 2)
+  status            CommissionStatus @default(PENDING) // PENDING | PAID
+  paidAt            DateTime?
+  payoutMethod      PayoutMethod? // FLOUCI | PAYPAL
+  createdAt         DateTime  @default(now())
+  
+  @@index([affiliateId])
+  @@index([status])
+}
+
+model PayoutRequest {
+  id                String    @id @default(uuid())
+  affiliateId       String
+  affiliate         Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  storeId           String
+  store             Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  amount            Decimal   @db.Decimal(10, 2)
+  payoutMethod      PayoutMethod
+  status            PayoutRequestStatus @default(PENDING_APPROVAL)
+  flouciTransferId  String?
+  notes             String?
+  approvedAt        DateTime?
+  completedAt       DateTime?
+  createdAt         DateTime  @default(now())
+  
+  @@index([affiliateId])
+  @@index([storeId])
+  @@index([status])
+}
+
+model Click {
+  id                String    @id @default(uuid())
+  affiliateId       String
+  affiliate         Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  ipHash            String    // SHA-256 hashed IP
+  userAgent         String?
+  converted         Boolean   @default(false)
+  orderId           String?
+  order             Order?    @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  createdAt         DateTime  @default(now())
+  
+  @@index([affiliateId])
+  @@index([ipHash])
+  @@index([createdAt])
+}
+
+// ENUMS
+enum Role {
+  STORE_OWNER
+  AFFILIATE
+  CUSTOMER
+  ADMIN
+}
+
+enum Language {
+  FR
+  AR
+}
+
+enum Template {
+  ARTISAN
+  MODETN
+  TECHDARI
+}
+
+enum Governorate {
+  TUNIS
+  SFAX
+  SOUSSE
+  KAIROUAN
+  BIZERTE
+  GABES
+  MONASTIR
+  MAHDIA
+  TOZEUR
+  KEF
+  JENDOUBA
+  NABEUL
+  ZAGHOUAN
+  BEN_AROUS
+  MANOUBA
+  SILIANA
+  KASSERINE
+  SIDI_BOUZID
+  GAFSA
+  MEDENINE
+  TATAOUINE
+  ARIANA
+  BEJA
+  KEBILI
+}
+
+enum StoreStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  FLOUCI
+  COD
+  PAYPAL
+}
+
+enum AffiliateStatus {
+  ACTIVE
+  BLOCKED
+}
+
+enum CommissionStatus {
+  PENDING
+  PAID
+  PENDING_PAYOUT
+}
+
+enum PayoutMethod {
+  FLOUCI
+  PAYPAL
+}
+
+enum PayoutRequestStatus {
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  COMPLETED
+}
