@@ -1,7 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/client';
-import type { Product } from '@prisma/client';
 
 export async function GET(
     request: NextRequest,
@@ -30,7 +29,7 @@ export async function GET(
         }
 
         // Transform products with proper typing
-        const products = store.products.map((product: Product) => ({
+        const products = store.products.map((product: any) => ({
             id: product.id,
             name: product.name,
             price: Number(product.price),
