@@ -4,6 +4,7 @@ import "../globals.css";
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { AuthProvider } from '@/contexts/AuthContext';
 
 const inter = Inter({
   variable: "--font-inter",
@@ -36,7 +37,9 @@ export default async function RootLayout({
         className={`${inter.variable} antialiased bg-gray-50 text-gray-900`}
       >
         <NextIntlClientProvider messages={messages}>
-          {children}
+          <AuthProvider>
+            {children}
+          </AuthProvider>
         </NextIntlClientProvider>
       </body>
     </html>
