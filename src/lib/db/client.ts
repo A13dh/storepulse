@@ -20,6 +20,12 @@ const pool = new Pool({
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 10000,
     application_name: 'storepulse',
+    // Disable SSL certificate validation for Railway's self-signed proxy cert
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+});
+
+pool.on('error', (error) => {
+    console.error('Unexpected pg pool error:', error);
 });
 
 const adapter = new PrismaPg(pool);
