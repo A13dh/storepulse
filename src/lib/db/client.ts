@@ -13,7 +13,15 @@ if (!connectionString) {
     }
 }
 
-const pool = new Pool({ connectionString });
+const pool = new Pool({ 
+    connectionString,
+    // Connection pool options for better reliability
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000,
+    application_name: 'storepulse',
+});
+
 const adapter = new PrismaPg(pool);
 
 const prismaClientSingleton = () => {
