@@ -24,24 +24,35 @@ export async function POST(req: NextRequest) {
         const { email, password, role, language } = result.data;
 
         // Check if user exists
-        const existingUser = await prisma.user.findUnique({
-            where: { email },
-        });
+        try {
+            const existingUser = await prisma.user.findUnique({
+                where: { email },
+            });
 
-        if (existingUser) {
-            return NextResponse.json({ error: 'User already exists' }, { status: 409 });
+            if (existingUser) {
+                return NextResponse.json({ error: 'User already exists' }, { status: 409 });
+            }
+        } catch (dbError) {
+            console.error('Database query error:', dbError);
+            throw dbError;
         }
 
         const hashedPassword = await hashPassword(password);
 
-        const user = await prisma.user.create({
-            data: {
-                email,
-                passwordHash: hashedPassword,
-                role,
-                language: language as 'FR' | 'AR', // Cast to fit Prisma enum
-            },
-        });
+        let user;
+        try {
+            user = await prisma.user.create({
+                data: {
+                    email,
+                    passwordHash: hashedPassword,
+                    role,
+                    language: language as 'FR' | 'AR', // Cast to fit Prisma enum
+                },
+            });
+        } catch (createError) {
+            console.error('User creation error:', createError);
+            throw createError;
+        }
 
         const token = signToken({
             userId: user.id,
@@ -64,7 +75,10 @@ export async function POST(req: NextRequest) {
         }, { status: 201 });
 
     } catch (error) {
-        console.error('Signup error:', error);
+        console.error('Signup error:', error instanceof Error ? error.message : error);
+        if (error instanceof Error) {
+            console.error('Error stack:', error.stack);
+        }
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
