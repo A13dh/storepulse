@@ -24,7 +24,7 @@ export default function SignupPage() {
     const initialRole = searchParams.get('role') === 'AFFILIATE' ? 'AFFILIATE' : 'STORE_OWNER';
 
     const [isLoading, setIsLoading] = useState(false);
-    const { login } = useAuth(); // If we auto-login
+    const { signup } = useAuth();
 
     const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<SignupFormData>({
         resolver: zodResolver(signupSchema),
@@ -41,28 +41,23 @@ export default function SignupPage() {
     const onSubmit = async (data: SignupFormData) => {
         setIsLoading(true);
         try {
-            const response = await api.post('/auth/signup', {
-                email: data.email,
-                password: data.password,
-                role: data.role,
-                language: 'FR' // Default, maybe detect locale?
-            });
+            const result = await signup(data.email, data.password, data.role);
 
-            const { token, user } = response.data;
-
-            // Auto login
-            login(token, user);
+            if (result.error) {
+                toast.error(result.error);
+                return;
+            }
 
             toast.success(tc('success'));
 
-            if (user.role === 'STORE_OWNER') {
-                router.push('/dashboard/store'); // Go to setup
+            if (data.role === 'STORE_OWNER') {
+                router.push('/dashboard/store');
             } else {
                 router.push('/affiliate');
             }
         } catch (error: any) {
             console.error(error);
-            toast.error(error.response?.data?.error || tc('error'));
+            toast.error(tc('error'));
         } finally {
             setIsLoading(false);
         }

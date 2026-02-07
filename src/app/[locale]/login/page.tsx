@@ -28,23 +28,25 @@ export default function LoginPage() {
     const onSubmit = async (data: LoginFormData) => {
         setIsLoading(true);
         try {
-            const response = await api.post('/auth/login', {
-                email: data.email,
-                password: data.password
-            });
+            const result = await login(data.email, data.password);
 
-            const { token, user } = response.data;
-            login(token, user);
+            if (result.error) {
+                toast.error(result.error);
+                return;
+            }
+
             toast.success(t('welcomeBack'));
 
-            if (user.role === 'STORE_OWNER') {
-                router.push('/dashboard');
-            } else {
-                router.push('/affiliate');
+            if (result.user) {
+                if (result.user.role === 'STORE_OWNER') {
+                    router.push('/dashboard');
+                } else {
+                    router.push('/affiliate');
+                }
             }
         } catch (error: any) {
             console.error(error);
-            toast.error(error.response?.data?.error || tc('error'));
+            toast.error(tc('error'));
         } finally {
             setIsLoading(false);
         }

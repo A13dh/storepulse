@@ -41,6 +41,7 @@
         "passwordLabel": "كلمة المرور",
         "confirmPasswordLabel": "تأكيد كلمة المرور",
         "alreadyHaveAccount": "لديك حساب بالفعل؟",
+        "forgotPassword": "نسيت كلمة المرور؟",
         "noAccount": "ليس لديك حساب؟",
         "resetPasswordTitle": "إعادة تعيين كلمة المرور",
         "resetPasswordDesc": "أدخل بريدك الإلكتروني لاستلام رابط إعادة التعيين.",

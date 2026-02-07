@@ -14,6 +14,8 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription }
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 
+import { useAuth } from "@/contexts/AuthContext";
+
 const forgotSchema = z.object({
     email: z.string().email()
 });
@@ -23,6 +25,7 @@ export default function ForgotPasswordPage() {
     const tc = useTranslations('Common');
     const [isLoading, setIsLoading] = useState(false);
     const [success, setSuccess] = useState(false);
+    const { forgotPassword } = useAuth();
 
     const { register, handleSubmit, formState: { errors } } = useForm<{ email: string }>({
         resolver: zodResolver(forgotSchema)
@@ -31,7 +34,11 @@ export default function ForgotPasswordPage() {
     const onSubmit = async (data: { email: string }) => {
         setIsLoading(true);
         try {
-            await api.post('/auth/forgot-password', data);
+            const result = await forgotPassword(data.email);
+            if (result.error) {
+                toast.error(result.error);
+                return;
+            }
             setSuccess(true);
             toast.success(tc('success'));
         } catch (error) {

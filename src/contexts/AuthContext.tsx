@@ -18,8 +18,10 @@ interface AuthContextType {
     supabaseUser: SupabaseUser | null;
     session: Session | null;
     loading: boolean;
-    login: (email: string, password: string) => Promise<{ error?: string }>;
-    signup: (email: string, password: string, role?: string) => Promise<{ error?: string }>;
+    login: (email: string, password: string) => Promise<{ error?: string, user?: User }>;
+    signup: (email: string, password: string, role?: string) => Promise<{ error?: string, user?: User }>;
+    forgotPassword: (email: string) => Promise<{ error?: string }>;
+    resetPassword: (password: string) => Promise<{ error?: string }>;
     logout: () => Promise<void>;
     isAuthenticated: boolean;
 }
@@ -69,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return () => subscription.unsubscribe();
     }, []);
 
-    const fetchUserProfile = async (supabaseUserId: string) => {
+    const fetchUserProfile = async (supabaseUserId: string): Promise<User | null> => {
         try {
             const response = await fetch('/api/auth/profile', {
                 method: 'POST',
@@ -80,13 +82,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (response.ok) {
                 const userData = await response.json();
                 setUser(userData.user);
+                return userData.user;
             }
         } catch (error) {
             console.error('Error fetching user profile:', error);
         }
+        return null;
     };
 
-    const login = async (email: string, password: string): Promise<{ error?: string }> => {
+    const login = async (email: string, password: string): Promise<{ error?: string, user?: User }> => {
         try {
             const { data, error } = await supabase.auth.signInWithPassword({
                 email,
@@ -98,7 +102,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
 
             if (data.user) {
-                await fetchUserProfile(data.user.id);
+                const profile = await fetchUserProfile(data.user.id);
+                return { user: profile || undefined };
             }
 
             return {};
@@ -107,7 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     };
 
-    const signup = async (email: string, password: string, role: string = 'STORE_OWNER'): Promise<{ error?: string }> => {
+    const signup = async (email: string, password: string, role: string = 'STORE_OWNER'): Promise<{ error?: string, user?: User }> => {
         try {
             const { data, error } = await supabase.auth.signUp({
                 email,
@@ -140,9 +145,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     return { error: result.error || 'Failed to create user profile' };
                 }
 
-                await fetchUserProfile(data.user.id);
+                const profile = await fetchUserProfile(data.user.id);
+                return { user: profile || undefined };
             }
 
+            return {};
+        } catch (error) {
+            return { error: 'An unexpected error occurred' };
+        }
+    };
+
+    const forgotPassword = async (email: string): Promise<{ error?: string }> => {
+        try {
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: `${window.location.origin}/reset-password`,
+            });
+            if (error) return { error: error.message };
+            return {};
+        } catch (error) {
+            return { error: 'An unexpected error occurred' };
+        }
+    };
+
+    const resetPassword = async (password: string): Promise<{ error?: string }> => {
+        try {
+            const { error } = await supabase.auth.updateUser({
+                password: password,
+            });
+            if (error) return { error: error.message };
             return {};
         } catch (error) {
             return { error: 'An unexpected error occurred' };
@@ -166,6 +196,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             loading,
             login,
             signup,
+            forgotPassword,
+            resetPassword,
             logout,
             isAuthenticated: !!session
         }}>

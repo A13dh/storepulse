@@ -9,6 +9,7 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 import api from "@/lib/api/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,23 +30,22 @@ export default function ResetPasswordPage() {
     const searchParams = useSearchParams();
     const token = searchParams.get('token');
 
+    const { resetPassword } = useAuth();
+
     const [isLoading, setIsLoading] = useState(false);
 
     const { register, handleSubmit, formState: { errors } } = useForm({
         resolver: zodResolver(resetSchema)
     });
 
-    if (!token) {
-        return <div>Invalid Token</div>;
-    }
-
     const onSubmit = async (data: any) => {
         setIsLoading(true);
         try {
-            await api.post('/auth/reset-password', {
-                token,
-                newPassword: data.password
-            });
+            const result = await resetPassword(data.password);
+            if (result.error) {
+                toast.error(result.error);
+                return;
+            }
             toast.success(tc('success'));
             router.push('/login');
         } catch (error) {

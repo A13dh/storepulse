@@ -41,6 +41,7 @@
         "passwordLabel": "Mot de passe",
         "confirmPasswordLabel": "Confirmer le mot de passe",
         "alreadyHaveAccount": "Vous avez déjà un compte ?",
+        "forgotPassword": "Mot de passe oublié ?",
         "noAccount": "Pas encore de compte ?",
         "resetPasswordTitle": "Réinitialiser le mot de passe",
         "resetPasswordDesc": "Entrez votre email pour recevoir le lien de réinitialisation.",
