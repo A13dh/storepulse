@@ -11,17 +11,31 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Supabase user ID and email are required' }, { status: 400 });
         }
 
-        // Check if user already exists
-        const existingUser = await prisma.user.findUnique({
+        // Check if user already exists by ID
+        let user = await prisma.user.findUnique({
             where: { id: supabaseUserId },
         });
 
-        if (existingUser) {
-            return NextResponse.json({ user: existingUser }, { status: 200 });
+        if (user) {
+            return NextResponse.json({ user }, { status: 200 });
+        }
+
+        // Check if user exists by email (maybe from old auth system)
+        const userByEmail = await prisma.user.findUnique({
+            where: { email },
+        });
+
+        if (userByEmail) {
+            // Update the existing user with the Supabase ID
+            user = await prisma.user.update({
+                where: { email },
+                data: { id: supabaseUserId },
+            });
+            return NextResponse.json({ user }, { status: 200 });
         }
 
         // Create new user with Supabase ID as our ID
-        const user = await prisma.user.create({
+        user = await prisma.user.create({
             data: {
                 id: supabaseUserId,
                 email: email,
