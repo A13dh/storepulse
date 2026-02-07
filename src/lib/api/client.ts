@@ -1,19 +1,8 @@
 
 import axios from 'axios';
 
-const getBrowserBaseURL = () => {
-    if (typeof window === 'undefined') return '/api';
-    const parts = window.location.pathname.split('/').filter(Boolean);
-    const maybeLocale = parts[0];
-    // If first path segment is a locale (fr or ar), prefix it
-    if (maybeLocale && ['fr', 'ar'].includes(maybeLocale)) {
-        return `/${maybeLocale}/api`;
-    }
-    return '/api';
-};
-
 const api = axios.create({
-    baseURL: getBrowserBaseURL(),
+    baseURL: '/api',
     headers: {
         'Content-Type': 'application/json',
     },
