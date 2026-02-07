@@ -20,7 +20,7 @@ const pool = new Pool({
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 10000,
     application_name: 'storepulse',
-    // Disable SSL certificate validation for Railway's self-signed proxy cert
+    // Disable SSL certificate validation if needed for some environments
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
 });
 

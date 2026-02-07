@@ -2,11 +2,11 @@
 
 ## Database Connection Fixed ✅
 
-Your Railway PostgreSQL database is now accessible via the proxy endpoint:
-- **Host:** `gondola.proxy.rlwy.net`
-- **Port:** `10049`
-- **Database:** `railway`
-- **Username:** `postgres`
+Your Supabase PostgreSQL database is accessible via the pooler:
+- **Host:** `aws-1-eu-north-1.pooler.supabase.com`
+- **Port:** `6543`
+- **Database:** `postgres`
+- **Username:** `postgres.torkptffaapvqaisoxrp`
 
 ## Add These Variables to Vercel
 
@@ -16,10 +16,10 @@ Add the following variables:
 
 | Key | Value |
 |-----|-------|
-| `DATABASE_URL` | `postgresql://postgres:VVwUbFIaxlTvuJxTYJJbQZsawnsQVOcm@gondola.proxy.rlwy.net:10049/railway?sslmode=allow` |
-| `JWT_SECRET` | `92JEeOCc2VSZqgbq0I/XrJ8KMHkQbRenbFnji1RVS6s=` |
-| `NEXTAUTH_SECRET` | `8931e66eb62fb231a42482a72982d95c` |
-| `NEXT_PUBLIC_APP_URL` | `https://storepulse-two.vercel.app` |
+| `DATABASE_URL` | (Use your pooling URL from .env) |
+| `DIRECT_URL` | (Use your direct URL from .env) |
+| `NEXT_PUBLIC_SUPABASE_URL` | `https://torkptffaapvqaisoxrp.supabase.co` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | (Your anon key from .env) |
 
 ## Important Notes
 
