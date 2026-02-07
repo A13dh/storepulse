@@ -13,9 +13,16 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
         }
 
-        const user = await prisma.user.findUnique({
-            where: { email },
-        });
+        let user;
+        try {
+            user = await prisma.user.findUnique({
+                where: { email },
+            });
+        } catch (dbError) {
+            console.error('Database query error (login):', dbError instanceof Error ? dbError.message : dbError);
+            if (dbError instanceof Error) console.error(dbError.stack);
+            throw dbError;
+        }
 
         if (!user) {
             // Return generic error for security
@@ -63,7 +70,8 @@ export async function POST(req: NextRequest) {
         }, { status: 200 });
 
     } catch (error) {
-        console.error('Login error:', error);
+        console.error('Login error:', error instanceof Error ? error.message : error);
+        if (error instanceof Error) console.error('Error stack:', error.stack);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }

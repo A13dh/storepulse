@@ -20,9 +20,16 @@ export async function POST(req: NextRequest) {
 
         const { email } = result.data;
 
-        const user = await prisma.user.findUnique({
-            where: { email }
-        });
+        let user;
+        try {
+            user = await prisma.user.findUnique({
+                where: { email }
+            });
+        } catch (dbError) {
+            console.error('Database query error (forgot-password):', dbError instanceof Error ? dbError.message : dbError);
+            if (dbError instanceof Error) console.error(dbError.stack);
+            throw dbError;
+        }
 
         if (user) {
             // Generate reset token (valid for 1 hour)
@@ -44,7 +51,8 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ message: 'If the email exists, a reset link has been sent.' }, { status: 200 });
 
     } catch (error) {
-        console.error('Forgot password error:', error);
+        console.error('Forgot password error:', error instanceof Error ? error.message : error);
+        if (error instanceof Error) console.error('Error stack:', error.stack);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
